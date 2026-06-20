@@ -1,0 +1,12 @@
+{
+  "name": "GameVerse",
+  "short_name": "GameVerse",
+  "description": "Play 1000+ free browser games instantly. No downloads, no sign-ups.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
