@@ -59,7 +59,7 @@ export default function SearchBar() {
             {results.map((game) => (
               <Link
                 key={game.id}
-                href={`/game/${game.slug}`}
+                href={`/games/${game.slug}`}
                 onClick={() => { setShow(false); setQuery(""); }}
                 className="flex items-center gap-4 p-3 rounded-xl hover:bg-dark-700/50 transition-colors"
               >

@@ -35,7 +35,7 @@ const categoryColors: Record<string, string> = {
 export default function GameCard({ game, index = 0 }: GameCardProps) {
   return (
     <Link
-      href={`/game/${game.slug}`}
+      href={`/games/${game.slug}`}
       className="group block animate-fade-in"
       style={{ animationDelay: `${(index % 12) * 50}ms` }}
     >

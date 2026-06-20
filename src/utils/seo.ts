@@ -54,7 +54,7 @@ export function generateGameJsonLd(game: Game) {
       price: "0",
       priceCurrency: "USD",
     },
-    url: `${BASE_URL}/game/${game.slug}`,
+    url: `${BASE_URL}/games/${game.slug}`,
   };
 }
 

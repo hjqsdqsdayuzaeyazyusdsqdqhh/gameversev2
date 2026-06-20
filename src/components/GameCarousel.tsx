@@ -35,7 +35,7 @@ export default function GameCarousel({ games, title }: GameCarouselProps) {
         {games.map((game) => (
           <Link
             key={game.id}
-            href={`/game/${game.slug}`}
+            href={`/games/${game.slug}`}
             className="flex-shrink-0 w-[200px] sm:w-[240px] md:w-[260px] snap-start group/card"
           >
             <div className="relative rounded-xl overflow-hidden card-hover card-glow-hover">

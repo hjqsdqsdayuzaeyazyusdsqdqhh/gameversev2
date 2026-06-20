@@ -6,7 +6,7 @@ interface ShareButtonsProps {
 }
 
 export default function ShareButtons({ title, slug }: ShareButtonsProps) {
-  const url = typeof window !== "undefined" ? `${window.location.origin}/game/${slug}` : `/game/${slug}`;
+  const url = typeof window !== "undefined" ? `${window.location.origin}/games/${slug}` : `/games/${slug}`;
   const text = `Check out ${title} on GameVerse!`;
 
   const share = async (platform: string) => {

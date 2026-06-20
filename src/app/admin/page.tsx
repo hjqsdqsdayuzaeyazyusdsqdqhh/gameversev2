@@ -115,7 +115,7 @@ export default function AdminPage() {
                 </td>
                 <td className="py-3 px-2 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Link href={`/game/${game.slug}`} className="text-xs text-neon-blue hover:underline">View</Link>
+                    <Link href={`/games/${game.slug}`} className="text-xs text-neon-blue hover:underline">View</Link>
                     <button
                       onClick={() => { setEditingGame(game); setEditMode(true); setActiveTab("add"); }}
                       className="text-xs text-gray-400 hover:text-white transition-colors"

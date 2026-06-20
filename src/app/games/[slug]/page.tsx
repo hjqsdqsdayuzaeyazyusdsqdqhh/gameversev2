@@ -53,7 +53,7 @@ export default function GamePage() {
   }
 
   const categoryLabel = categories.find((c) => c.name === game.category)?.label || game.category;
-  const gameUrl = typeof window !== "undefined" ? `${window.location.origin}/game/${game.slug}` : `/game/${game.slug}`;
+  const gameUrl = typeof window !== "undefined" ? `${window.location.origin}/games/${game.slug}` : `/games/${game.slug}`;
 
   return (
     <>
