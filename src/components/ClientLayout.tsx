@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ThemeContext, type Theme } from "./ThemeContext";
+import AuthProvider from "./AuthProvider";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import AdSlot from "./AdSlot";
@@ -30,15 +31,17 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {mounted && (
-        <>
-          <Navbar />
-          <AdSlot position="header" />
-          <main className="min-h-screen">{children}</main>
-          <Footer />
-          <AdSlot position="footer" />
-        </>
-      )}
+      <AuthProvider>
+        {mounted && (
+          <>
+            <Navbar />
+            <AdSlot position="header" />
+            <main className="min-h-screen">{children}</main>
+            <Footer />
+            <AdSlot position="footer" />
+          </>
+        )}
+      </AuthProvider>
     </ThemeContext.Provider>
   );
 }
