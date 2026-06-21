@@ -5,6 +5,7 @@ import { ThemeContext, type Theme } from "./ThemeContext";
 import Navbar from "./Navbar";
 import Footer from "./Footer";
 import AdSlot from "./AdSlot";
+import PageTransition from "./PageTransition";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
@@ -34,7 +35,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
         <>
           <Navbar />
           <AdSlot position="header" />
-          <main className="min-h-screen">{children}</main>
+          <main className="min-h-screen">
+            <PageTransition>{children}</PageTransition>
+          </main>
           <Footer />
           <AdSlot position="footer" />
         </>

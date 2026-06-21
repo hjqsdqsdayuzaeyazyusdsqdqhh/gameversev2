@@ -1,27 +1,36 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Fuse from "fuse.js";
+import { motion, AnimatePresence } from "framer-motion";
 import { games } from "@/data/games";
 import type { Game } from "@/types";
+
+const fuse = new Fuse(games, {
+  keys: [
+    { name: "title", weight: 3 },
+    { name: "description", weight: 1 },
+    { name: "tags", weight: 2 },
+    { name: "category", weight: 2 },
+  ],
+  threshold: 0.4,
+  includeScore: true,
+});
 
 export default function SearchBar() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Game[]>([]);
   const [show, setShow] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (query.length < 2) { setResults([]); return; }
-    const q = query.toLowerCase();
-    const filtered = games.filter(
-      (g) =>
-        g.title.toLowerCase().includes(q) ||
-        g.description.toLowerCase().includes(q) ||
-        g.tags.some((t) => t.toLowerCase().includes(q)) ||
-        g.category.toLowerCase().includes(q)
-    );
-    setResults(filtered.slice(0, 8));
+    if (query.length < 2) { setResults([]); setSelectedIndex(-1); return; }
+    const searched = fuse.search(query).map((r) => r.item).slice(0, 8);
+    setResults(searched);
+    setSelectedIndex(-1);
     setShow(true);
   }, [query]);
 
@@ -33,6 +42,25 @@ export default function SearchBar() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!show || results.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      const game = results[selectedIndex];
+      window.location.href = `/games/${game.slug}`;
+      setShow(false);
+      setQuery("");
+    } else if (e.key === "Escape") {
+      setShow(false);
+    }
+  };
+
   return (
     <div ref={ref} className="relative w-full">
       <div className="relative">
@@ -40,28 +68,38 @@ export default function SearchBar() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
           placeholder="Search games, categories, tags..."
           className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-dark-800/80 border border-dark-600/50 text-white placeholder-gray-500 focus:outline-none focus:border-neon-blue/50 focus:ring-2 focus:ring-neon-blue/20 transition-all"
         />
         {query && (
-          <button onClick={() => { setQuery(""); setResults([]); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
+          <button onClick={() => { setQuery(""); setResults([]); setShow(false); inputRef.current?.focus(); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         )}
       </div>
 
-      {show && results.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl glass border border-dark-600/50 shadow-2xl shadow-black/40 overflow-hidden z-50 animate-scale-in">
-          <div className="p-1">
-            {results.map((game) => (
+      <AnimatePresence>
+        {show && results.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="absolute top-full left-0 right-0 mt-2 rounded-2xl glass border border-dark-600/50 shadow-2xl shadow-black/40 overflow-hidden z-50"
+          >
+            {results.map((game, i) => (
               <Link
                 key={game.id}
                 href={`/games/${game.slug}`}
                 onClick={() => { setShow(false); setQuery(""); }}
-                className="flex items-center gap-4 p-3 rounded-xl hover:bg-dark-700/50 transition-colors"
+                className={`flex items-center gap-4 p-3 transition-colors ${
+                  i === selectedIndex ? "bg-dark-700/70" : "hover:bg-dark-700/50"
+                }`}
               >
                 <img src={game.thumbnail} alt={game.title} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" loading="lazy" />
                 <div className="flex-1 min-w-0">
@@ -71,9 +109,9 @@ export default function SearchBar() {
                 <svg className="w-4 h-4 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
               </Link>
             ))}
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

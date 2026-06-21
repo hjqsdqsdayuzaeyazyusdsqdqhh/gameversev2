@@ -1,80 +1,193 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import type { Game } from "@/types";
+import type { Category } from "@/types";
+import { games } from "@/data/games";
 
 interface GameCarouselProps {
-  games: Game[];
   title: string;
+  category?: string;
+  games?: Game[];
+  link?: { href: string; label: string };
+  linkComponent?: "category" | "custom";
 }
 
-export default function GameCarousel({ games, title }: GameCarouselProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+const categories: Category[] = [
+  { id: "action", name: "Action", slug: "action", description: "" },
+  { id: "adventure", name: "Adventure", slug: "adventure", description: "" },
+  { id: "arcade", name: "Arcade", slug: "arcade", description: "" },
+  { id: "puzzle", name: "Puzzle", slug: "puzzle", description: "" },
+  { id: "casual", name: "Casual", slug: "casual", description: "" },
+  { id: "shooting", name: "Shooting", slug: "shooting", description: "" },
+  { id: "sports", name: "Sports", slug: "sports", description: "" },
+  { id: "strategy", name: "Strategy", slug: "strategy", description: "" },
+  { id: "racing", name: "Racing", slug: "racing", description: "" },
+  { id: "fighting", name: "Fighting", slug: "fighting", description: "" },
+  { id: "horror", name: "Horror", slug: "horror", description: "" },
+  { id: "music", name: "Music", slug: "music", description: "" },
+  { id: "simulation", name: "Simulation", slug: "simulation", description: "" },
+];
 
-  const scroll = (direction: "left" | "right") => {
-    if (!scrollRef.current) return;
-    const amount = scrollRef.current.clientWidth * 0.8;
-    scrollRef.current.scrollBy({ left: direction === "left" ? -amount : amount, behavior: "smooth" });
+export default function GameCarousel({ title, category, games: propGames, link, linkComponent }: GameCarouselProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const gameList = propGames ?? (category ? games.filter((g) => g.category === category) : games);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => checkScroll();
+    el.addEventListener("scroll", onScroll, { passive: true });
+    checkScroll();
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [checkScroll]);
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const amount = el.clientWidth * 0.7;
+    el.scrollBy({
+      left: dir === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
   };
 
-  return (
-    <div className="relative group">
-      <button
-        onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-dark-800/80 backdrop-blur border border-dark-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-dark-700 -translate-x-4"
-        aria-label="Scroll left"
-      >
-        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-      </button>
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-      <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-auto scrollbar-hide py-2 px-0.5 snap-x snap-mandatory"
-      >
-        {games.map((game) => (
-          <Link
-            key={game.id}
-            href={`/games/${game.slug}`}
-            className="flex-shrink-0 w-[200px] sm:w-[240px] md:w-[260px] snap-start group/card"
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const items = el.querySelectorAll(".carousel-item");
+    if (!items.length) return;
+
+    let maxHeight = 0;
+    items.forEach((item) => {
+      const h = item.getBoundingClientRect().height;
+      if (h > maxHeight) maxHeight = h;
+    });
+    el.style.minHeight = `${maxHeight}px`;
+  }, [gameList]);
+
+  return (
+    <section className="relative">
+      <div className="flex items-end justify-between mb-6">
+        <div>
+          <motion.h2
+            className="text-2xl md:text-3xl font-bold text-white"
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.4 }}
           >
-            <div className="relative rounded-xl overflow-hidden card-hover card-glow-hover">
-              <div className="aspect-[16/10] bg-dark-700 overflow-hidden">
-                <img
-                  src={game.thumbnail}
-                  alt={game.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300">
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-neon-blue/20 text-neon-blue backdrop-blur-sm capitalize">
-                    {game.category}
-                  </span>
-                </div>
-              </div>
-              {game.featured && (
-                <div className="absolute top-2 left-2">
-                  <span className="text-[10px] font-bold px-2 py-1 rounded-full brand-gradient text-white">Featured</span>
-                </div>
-              )}
-              <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent group-hover/card:opacity-0 transition-opacity duration-300">
-                <h3 className="text-white font-semibold text-sm truncate">{game.title}</h3>
-              </div>
+            {title}
+          </motion.h2>
+        </div>
+        <div className="flex items-center gap-3">
+          {gameList.length > 0 && (
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={() => scroll("left")}
+                className={`p-2 rounded-xl border transition-all ${
+                  canScrollLeft
+                    ? "border-dark-600/50 text-white hover:bg-dark-700/50 hover:border-neon-blue/30"
+                    : "border-dark-700/30 text-gray-600 cursor-not-allowed"
+                }`}
+                aria-label="Scroll left"
+                disabled={!canScrollLeft}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => scroll("right")}
+                className={`p-2 rounded-xl border transition-all ${
+                  canScrollRight
+                    ? "border-dark-600/50 text-white hover:bg-dark-700/50 hover:border-neon-blue/30"
+                    : "border-dark-700/30 text-gray-600 cursor-not-allowed"
+                }`}
+                aria-label="Scroll right"
+                disabled={!canScrollRight}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1.5 truncate">{game.title}</p>
-          </Link>
-        ))}
+          )}
+          {link && (
+            <Link
+              href={link.href}
+              className="text-sm text-neon-blue hover:text-neon-blue/80 transition-colors inline-flex items-center gap-1"
+            >
+              {link.label}
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          )}
+        </div>
       </div>
 
-      <button
-        onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-dark-800/80 backdrop-blur border border-dark-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-dark-700 translate-x-4"
-        aria-label="Scroll right"
-      >
-        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-      </button>
-    </div>
+      {gameList.length === 0 ? (
+        <div className="text-center py-12 glass rounded-2xl border border-dark-600/30">
+          <p className="text-gray-500">No games found in this category yet.</p>
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1 snap-x snap-mandatory"
+        >
+          {gameList.slice(0, 20).map((game, i) => (
+            <motion.div
+              key={game.id}
+              className="carousel-item flex-shrink-0 w-[185px] sm:w-[200px] snap-start"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.35, delay: i * 0.03 }}
+            >
+              <Link href={`/games/${game.slug}`} className="group block">
+                <motion.div
+                  className="relative overflow-hidden rounded-xl glass border border-dark-600/30 transition-all duration-300"
+                  whileHover={{ y: -4, scale: 1.02, boxShadow: "0 12px 30px rgba(0, 200, 255, 0.12)" }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <motion.img
+                      src={game.thumbnail}
+                      alt={game.title}
+                      className="w-full h-full object-cover"
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.5 }}
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-2.5">
+                    <h3 className="text-xs font-semibold text-white truncate drop-shadow-md">
+                      {game.title}
+                    </h3>
+                    <p className="text-[10px] text-gray-400 capitalize truncate">{game.category}</p>
+                  </div>
+                </motion.div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
